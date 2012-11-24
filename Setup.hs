@@ -58,6 +58,9 @@ svgBubbleGen w h dataset = [svgCircle ((fromIntegral w/2, fromIntegral h/2), 10.
 svgCircle :: Circle -> String
 svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,0,0)\" />\n" x y r
 
+-- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
+calcPercent :: [Float]-> Float-> Float
+calcPercent dataset n = (100*n)/(sum dataset)
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
