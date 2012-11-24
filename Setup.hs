@@ -50,7 +50,7 @@ svgCloudGen w h dataset =
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [svgCircle ((fromIntegral w/2, fromIntegral h/2), 10.0)]
+svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) dataset]
 
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
@@ -59,8 +59,14 @@ svgCircle :: Circle -> String
 svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,0,0)\" />\n" x y r
 
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
-calcPercent :: [Float]-> Float-> Float
-calcPercent dataset n = (100*n)/(sum dataset)
+calcPercent :: [Int]-> Int -> Float
+calcPercent dataset n = (100*(fromIntegral n))/(fromIntegral(sum dataset))
+
+--
+geraCirculos :: Float -> Float -> [Int] -> String
+geraCirculos _ _ [] = []
+geraCirculos x y dataset = do 
+    svgCircle ((x, y), (calcPercent dataset (head dataset))) ++ (geraCirculos (x+10) (y+10) (tail dataset))
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
