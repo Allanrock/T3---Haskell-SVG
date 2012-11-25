@@ -7,7 +7,7 @@
 module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
-
+import Data.List
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
@@ -50,7 +50,7 @@ svgCloudGen w h dataset =
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) dataset]
+svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) (sort dataset)]
 
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
@@ -59,14 +59,46 @@ svgCircle :: Circle -> String
 svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (5*r))
 
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
-calcPercent :: [Int]-> Int -> Float
-calcPercent dataset n = (100*(fromIntegral n))/(fromIntegral(sum dataset))
+calcCirculo :: Int -> Float
+calcCirculo n
+        |n < 10 = 50
+        |n < 50 = 100
+        |n < 250 = 150
+        |n < 500 = 200
+        |n < 1000 = 250
+        |n < 3000 = 3000
 
---
+pitagoras :: Circle -> Circle -> Float
+pitagoras ((x1,y1),_) ((x2,y2),_) = sqrt r3
+        where
+        r1 = (x1-x2)^2
+        r2 = (y1-y2)^2
+        r3 = (r1+r2)
+                
+boolIntersec :: [Circle] -> Circle -> Bool
+boolIntersec [] _ = True
+boolIntersec lista n
+        |distancia > somaRaios = boolIntersec (tail lista) n
+        |distancia <= somaRaios = False
+        where
+        distancia = pitagoras (head lista) n
+        somaRaios = snd (head lista) + (snd n)
+               
+
+
+--Gera as coordenadas
 geraCirculos :: Float -> Float -> [Int] -> String
 geraCirculos _ _ [] = []
 geraCirculos x y dataset = do 
-    svgCircle ((x, y), (calcPercent dataset (head dataset))) ++ (geraCirculos (x+10) (y+10) (tail dataset))
+    svgCircle ((x, y), (calcCirculo (head dataset)) ) ++ (geraCirculos px py(tail dataset))
+    where
+        px = x + (5 * t * (cos t))
+        py = y + (5 * t * (sin t))
+        t = (x + y) / 100
+        elem = (head dataset)
+        pr = fromIntegral elem/90
+               
+    
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 svgViewBox :: Int -> Int -> String
