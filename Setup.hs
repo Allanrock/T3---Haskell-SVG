@@ -13,10 +13,10 @@ type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 360
+imageWidth = 3600
 
 imageHeight :: Int
-imageHeight = 360
+imageHeight = 3600
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -56,7 +56,7 @@ svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) d
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
 svgCircle :: Circle -> String
-svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(255,0,0)\" />\n" x y r
+svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (5*r))
 
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
 calcPercent :: [Int]-> Int -> Float
