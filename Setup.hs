@@ -7,16 +7,16 @@
 module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
-import Data.List
+
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 3600
+imageWidth = 1000
 
 imageHeight :: Int
-imageHeight = 3600
+imageHeight = 1000
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -27,6 +27,7 @@ main = do
             freqs = readInts (map snd pairs)
         writeFile outfile (svgCloudGen imageWidth imageHeight freqs)
         putStrLn "Ok!"
+                
         where 
                 infile = "dataset.txt"
                 outfile = "tagcloud.svg"
@@ -35,6 +36,7 @@ main = do
 -- Transforma lista de strings em lista de inteiros
 readInts :: [String] -> [Int]
 readInts ss = map read ss
+
 
 
 -- Gera o documento SVG da tag cloud, concatenando cabecalho, conteudo e rodape
@@ -50,7 +52,7 @@ svgCloudGen w h dataset =
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) (sort dataset)]
+svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) dataset 0.0]
 
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
@@ -61,43 +63,23 @@ svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
 calcCirculo :: Int -> Float
 calcCirculo n
-        |n < 10 = 50
-        |n < 50 = 100
-        |n < 250 = 150
-        |n < 500 = 200
-        |n < 1000 = 250
-        |n < 3000 = 3000
+        |n < 10 = 5
+        |n < 50 = 10
+        |n < 250 = 15
+        |n < 500 = 20
+        |n < 1000 = 25
+        |n < 3000 = 50
 
-pitagoras :: Circle -> Circle -> Float
-pitagoras ((x1,y1),_) ((x2,y2),_) = sqrt r3
-        where
-        r1 = (x1-x2)^2
-        r2 = (y1-y2)^2
-        r3 = (r1+r2)
-                
-boolIntersec :: [Circle] -> Circle -> Bool
-boolIntersec [] _ = True
-boolIntersec lista n
-        |distancia > somaRaios = boolIntersec (tail lista) n
-        |distancia <= somaRaios = False
-        where
-        distancia = pitagoras (head lista) n
-        somaRaios = snd (head lista) + (snd n)
-               
-
-
---Gera as coordenadas
-geraCirculos :: Float -> Float -> [Int] -> String
-geraCirculos _ _ [] = []
-geraCirculos x y dataset = do 
-    svgCircle ((x, y), (calcCirculo (head dataset)) ) ++ (geraCirculos px py(tail dataset))
+--
+geraCirculos :: Float -> Float -> [Int] -> Float -> String
+geraCirculos _ _ [] _ = []
+geraCirculos x y dataset t = do 
+    svgCircle ((x, y), (calcCirculo (head dataset)) ) ++ (geraCirculos px py(tail dataset) (t+0.25))
     where
-        px = x + (5 * t * (cos t))
-        py = y + (5 * t * (sin t))
-        t = (x + y) / 100
-        elem = (head dataset)
-        pr = fromIntegral elem/90
-               
+        px = 500+(4 * t * (cos t))
+        py = 500+(4 * t * (sin t))
+        
+        
     
 
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
