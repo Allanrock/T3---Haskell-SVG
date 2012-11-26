@@ -34,4 +34,11 @@
 	<natures>
 		<nature>net.sf.eclipsefp.haskell.core.project.HaskellNature</nature>
 	</natures>
+	<linkedResources>
+		<link>
+			<name>dataset.txt</name>
+			<type>1</type>
+			<locationURI>PARENT-3-PROJECT_LOC/Desktop/Haskell/T3/Teste/dataset.txt</locationURI>
+		</link>
+	</linkedResources>
 </projectDescription>

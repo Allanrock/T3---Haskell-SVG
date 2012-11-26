@@ -7,16 +7,16 @@
 module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
-
+import Data.List
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 1000
+imageWidth = 3600
 
 imageHeight :: Int
-imageHeight = 1000
+imageHeight = 3600
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -27,7 +27,6 @@ main = do
             freqs = readInts (map snd pairs)
         writeFile outfile (svgCloudGen imageWidth imageHeight freqs)
         putStrLn "Ok!"
-                
         where 
                 infile = "dataset.txt"
                 outfile = "tagcloud.svg"
@@ -36,7 +35,6 @@ main = do
 -- Transforma lista de strings em lista de inteiros
 readInts :: [String] -> [Int]
 readInts ss = map read ss
-
 
 
 -- Gera o documento SVG da tag cloud, concatenando cabecalho, conteudo e rodape
@@ -52,39 +50,64 @@ svgCloudGen w h dataset =
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) dataset 0.0]
+svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) (reverse (sort dataset)) 0.0 []]
 
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
 svgCircle :: Circle -> String
-svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (5*r))
+svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (r))
 
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
 calcCirculo :: Int -> Float
 calcCirculo n
-        |n < 10 = 5
-        |n < 50 = 10
-        |n < 250 = 15
-        |n < 500 = 20
-        |n < 1000 = 25
-        |n < 3000 = 50
+        |n < 10 = 25
+        |n < 50 = 50
+        |n < 250 = 100
+        |n < 500 = 150
+        |n < 1000 = 200
+        |n < 3000 = 250
 
---
-geraCirculos :: Float -> Float -> [Int] -> Float -> String
-geraCirculos _ _ [] _ = []
-geraCirculos x y dataset t = do 
-    svgCircle ((x, y), (calcCirculo (head dataset)) ) ++ (geraCirculos px py(tail dataset) (t+0.25))
-    where
-        px = 500+(4 * t * (cos t))
-        py = 500+(4 * t * (sin t))
-        
-        
-    
+pitagoras :: Circle -> Circle -> Float
+pitagoras ((x1,y1),_) ((x2,y2),_) = sqrt r3
+        where
+        r1 = (x1-x2)^2
+        r2 = (y1-y2)^2
+        r3 = (r1+r2)
+                
+boolIntersec :: [Circle] -> Circle -> Bool
+boolIntersec [] n = False
+boolIntersec lista n
+        |distancia > somaRaios = boolIntersec (tail lista) n
+        |distancia <= somaRaios = True
+        where
+        distancia = pitagoras (head lista) n
+        somaRaios = snd (head lista) + (snd n)
+               
 
+geraPonto :: Float -> Point
+geraPonto t = novo
+        where
+        px = 1800+(0.5 * t * (cos t))
+        py = 1800+(0.5 * t * (sin t))
+        novo = (px,py)
+        
+--Gera as coordenadas
+geraCirculos :: Float -> Float -> [Int] -> Float -> [Circle] -> String
+geraCirculos _ _ [] _ _ = []
+geraCirculos x y dataset t circles
+        |boolIntersec circles ((geraPonto t),raio) == True = geraCirculos x y dataset (t+0.2) circles
+        |boolIntersec circles ((geraPonto t),raio) == False = svgCircle ((x, y), raio) ++ (geraCirculos px py(tail dataset) t addcirc)
+        where
+        px = fst (geraPonto t)
+        py = snd (geraPonto t)
+        addcirc = ((x,y),raio) : circles
+        raio = calcCirculo (head dataset)
+        
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
+
 svgViewBox :: Int -> Int -> String
 svgViewBox w h =
         printf  "<svg width=\"%d\" height=\"%d\" viewBox=\"0 0 %d %d\"" w h w h ++ 
                 " version=\"1.1\" xmlns=\"http://www.w3.org/2000/svg\">\n" ++
-        printf "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:white;\"/>\n" w h
+        printf  "<rect x=\"0\" y=\"0\" width=\"%d\" height=\"%d\" style=\"fill:white;\"/>\n" w h
