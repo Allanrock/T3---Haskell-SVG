@@ -8,6 +8,8 @@ module Main where
 
 import Text.Printf -- Oba, Haskell tem printf! :-)
 import Data.List
+import Data.Function
+
 type Point     = (Float,Float)
 type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
@@ -46,11 +48,23 @@ svgCloudGen w h dataset =
         (concat (svgBubbleGen w h dataset)) ++ "</svg>\n"
 
 
+calcRaio :: [Int] -> Int -> [Float]
+calcRaio [] soma = []
+calcRaio lista soma = percent : calcRaio cauda soma
+        where
+        percent = (800*cabeca)/somaFloat + 1
+        cauda = (tail lista)
+        cabeca = fromIntegral (head lista) :: Float
+        somaFloat = fromIntegral soma :: Float
 -- Esta funcao deve gerar a lista de circulos em formato SVG.
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) (reverse (sort dataset)) 0.0 []]
+svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) raios 0.0 []]
+        where
+        ordena = (sort dataset)
+        raios = reverse (calcRaio ordena (sum dataset))
+        
 
 
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
@@ -88,21 +102,22 @@ boolIntersec lista n
 geraPonto :: Float -> Point
 geraPonto t = novo
         where
-        px = 1800+(0.5 * t * (cos t))
-        py = 1800+(0.5 * t * (sin t))
+        px = 1800+(8 * t * (cos t))
+        py = 1800+(8 * t * (sin t))
         novo = (px,py)
         
 --Gera as coordenadas
-geraCirculos :: Float -> Float -> [Int] -> Float -> [Circle] -> String
+geraCirculos :: Float -> Float -> [Float] -> Float -> [Circle] -> String
 geraCirculos _ _ [] _ _ = []
-geraCirculos x y dataset t circles
-        |boolIntersec circles ((geraPonto t),raio) == True = geraCirculos x y dataset (t+0.2) circles
-        |boolIntersec circles ((geraPonto t),raio) == False = svgCircle ((x, y), raio) ++ (geraCirculos px py(tail dataset) t addcirc)
+geraCirculos x y raios t circles
+        |circles == [] = geraCirculos x y raios t addcirc
+        |boolIntersec circles ((geraPonto t),raio) == True = geraCirculos x y raios (t+0.25) circles
+        |boolIntersec circles ((geraPonto t),raio) == False = svgCircle ((x, y), raio) ++ (geraCirculos px py(tail raios) t addcirc)
         where
         px = fst (geraPonto t)
         py = snd (geraPonto t)
         addcirc = ((x,y),raio) : circles
-        raio = calcCirculo (head dataset)
+        raio = (head raios)
         
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 
