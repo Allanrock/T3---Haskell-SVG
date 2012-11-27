@@ -15,10 +15,10 @@ type Color     = (Int,Int,Int)
 type Circle    = (Point,Float)
 
 imageWidth :: Int
-imageWidth = 3600
+imageWidth = 400
 
 imageHeight :: Int
-imageHeight = 3600
+imageHeight = 400
 
 
 -- Funcao principal que faz leitura do dataset e gera arquivo SVG
@@ -52,7 +52,7 @@ calcRaio :: [Int] -> Int -> [Float]
 calcRaio [] soma = []
 calcRaio lista soma = percent : calcRaio cauda soma
         where
-        percent = (800*cabeca)/somaFloat + 1
+        percent = (100*cabeca)/somaFloat + 1
         cauda = (tail lista)
         cabeca = fromIntegral (head lista) :: Float
         somaFloat = fromIntegral soma :: Float
@@ -60,7 +60,7 @@ calcRaio lista soma = percent : calcRaio cauda soma
 -- A implementacao atual eh apenas um teste que gera um circulo posicionado no meio da figura.
 -- TODO: Alterar essa funcao para usar os dados do dataset.
 svgBubbleGen:: Int -> Int -> [Int] -> [String]
-svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) raios 0.0 []]
+svgBubbleGen w h dataset = (geraCirculos ((fromIntegral w/2),(fromIntegral h/2)) raios 0.0 [])
         where
         ordena = (sort dataset)
         raios = reverse (calcRaio ordena (sum dataset))
@@ -70,7 +70,7 @@ svgBubbleGen w h dataset = [geraCirculos (fromIntegral w/2) (fromIntegral h/2) r
 -- Gera string representando um circulo em SVG. A cor do circulo esta fixa. 
 -- TODO: Alterar esta funcao para mostrar um circulo de uma cor fornecida como parametro.
 svgCircle :: Circle -> String
-svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (r))
+svgCircle ((x,y),r) = printf "<circle cx=\"%f\" cy=\"%f\" r=\"%f\" fill=\"rgb(%d,0,0)\" />\n" x y r (fromEnum (r*2.5))
 
 -- Calcula o percentual para gerar o raio (raio máximo temporariamente 100)
 calcCirculo :: Int -> Float
@@ -83,7 +83,7 @@ calcCirculo n
         |n < 3000 = 250
 
 pitagoras :: Circle -> Circle -> Float
-pitagoras ((x1,y1),_) ((x2,y2),_) = sqrt r3
+pitagoras ((x1,y1),_) ((x2,y2),_) = (sqrt r3)
         where
         r1 = (x1-x2)^2
         r2 = (y1-y2)^2
@@ -102,23 +102,27 @@ boolIntersec lista n
 geraPonto :: Float -> Point
 geraPonto t = novo
         where
-        px = 1800+(8 * t * (cos t))
-        py = 1800+(8 * t * (sin t))
+        px = 200+(0.1 * t * (cos t))
+        py = 200+(0.1 * t * (sin t))
         novo = (px,py)
-        
+novoCirculo :: [Circle] -> Float -> Float -> Circle
+novoCirculo [] t primeiro = ((geraPonto t), primeiro)
+novoCirculo raios t  raio
+                |boolIntersec raios circulo == False = circulo
+                |boolIntersec raios circulo == True = novoCirculo raios (t+0.1)  raio
+                where
+                circulo = (ponto, raio)
+                ponto = (geraPonto t)
+                        
 --Gera as coordenadas
-geraCirculos :: Float -> Float -> [Float] -> Float -> [Circle] -> String
-geraCirculos _ _ [] _ _ = []
-geraCirculos x y raios t circles
-        |circles == [] = geraCirculos x y raios t addcirc
-        |boolIntersec circles ((geraPonto t),raio) == True = geraCirculos x y raios (t+0.25) circles
-        |boolIntersec circles ((geraPonto t),raio) == False = svgCircle ((x, y), raio) ++ (geraCirculos px py(tail raios) t addcirc)
+-- |circles == [] = geraCirculos x y raios t ([((x,y),raio)] ++ circles)
+geraCirculos :: Point -> [Float] -> Float -> [Circle] -> [String]
+geraCirculos _ [] _ _ = []
+geraCirculos ponto raios t circles = [svgCircle novocirculo] ++ (geraCirculos novoponto (tail raios) t ([(ponto,raio)] ++ circles))
         where
-        px = fst (geraPonto t)
-        py = snd (geraPonto t)
-        addcirc = ((x,y),raio) : circles
         raio = (head raios)
-        
+        novocirculo = novoCirculo circles t raio
+        novoponto = fst (novocirculo)
 -- Configura o viewBox da imagem e coloca retangulo branco no fundo
 
 svgViewBox :: Int -> Int -> String
